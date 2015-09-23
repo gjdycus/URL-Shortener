@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+require "launchy"
+
+def list_urls(user)
+  user.submitted_urls.each do |submitted_url|
+    print "[" + submitted_url.id.to_s + "]"
+    print submitted_url.long_url
+    print " "
+    print submitted_url.short_url
+    puts
+  end
+  puts "Follow by ID or by short URL? (ID, URL)"
+  choice = gets.chomp.upcase
+  if (choice[0..2] == "URL")
+    puts "Type in a short url to follow:"
+    shorty = gets.chomp
+    Launchy.open(ShortenedUrl.find_by_short_url(shorty).long_url)
+  elsif (choice[0..1] == "ID")
+    puts "Select an ID #"
+    num = gets.chomp
+    long = ShortenedUrl.find(num.to_i).long_url
+    Launchy.open(long)
+  end
+end
+
+def make_url(user)
+  puts "Input your URL"
+  new_long_url = gets.chomp
+  until ShortenedUrl.create_for_user_and_long_url(user, new_long_url)
+    puts "Try again with valid input."
+    new_long_url = gets.chomp
+  end
+
+  Launchy.open(user.submitted_urls.last.long_url)
+end
+
+puts "Please submit your email:"
+email = gets.chomp
+
+unless (user = User.find_by_email(email))
+  user = User.create!(email: email)
+end
+
+puts "Visit shortened URL or make new one? (V/M)"
+choice = gets.chomp.upcase[0]
+if (choice == "V")
+  list_urls(user)
+elsif (choice == "M")
+  make_url(user)
+end
